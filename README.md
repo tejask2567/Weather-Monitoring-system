@@ -27,8 +27,8 @@ The Weather Monitoring System is a Flask-based web application that provides rea
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/weather-monitoring-system.git
-   cd weather-monitoring-system
+   git clone https://github.com/tejask2567/Weather-Monitoring-system.git
+   cd Weather-Monitoring-system
    ```
 
 2. Set up a virtual environment:
