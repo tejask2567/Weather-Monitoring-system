@@ -45,12 +45,12 @@ The Weather Monitoring System is a Flask-based web application that provides rea
 4. Set up environment variables:
    Create a `.env` file in the root directory and add the following:
    ```
-   SECRET_KEY=your_secret_key
-   OPENWEATHER_API_KEY=your_openweathermap_api_key
-   DATABASE_URL=sqlite:///weather.db
-   MAIL_USERNAME=your_email@gmail.com
-   MAIL_PASSWORD=your_email_password
-   ALERT_EMAIL=recipient@example.com
+   SECRET_KEY='your_secret_key'
+   OPENWEATHER_API_KEY='your_openweathermap_api_key'
+   DATABASE_URL='sqlite:///weather.db'
+   MAIL_USERNAME='your_email@gmail.com'
+   MAIL_PASSWORD'=your_email_password'
+   ALERT_EMAIL='recipient@example.com'
    ```
 
 5. Initialize the database:
