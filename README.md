@@ -63,6 +63,8 @@ The Weather Monitoring System is a Flask-based web application that provides rea
 6. Run the application:
    ```
    flask run
+   or
+   python app.py
    ```
 
 7. Open a web browser and navigate to `http://localhost:5000`
