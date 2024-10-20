@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Monitoring System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">Weather Monitoring System</h1>
+        
+        <!-- City Selection and Temperature Preference -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Select City</h2>
+                <div class="flex flex-wrap gap-2" id="cityButtons">
+                    <button class="city-btn px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 active" data-city="Delhi">Delhi</button>
+                    <button class="city-btn px-4 py-2 rounded-md bg-gray-500 text-white hover:bg-gray-600" data-city="Mumbai">Mumbai</button>
+                    <button class="city-btn px-4 py-2 rounded-md bg-gray-500 text-white hover:bg-gray-600" data-city="Chennai">Chennai</button>
+                    <button class="city-btn px-4 py-2 rounded-md bg-gray-500 text-white hover:bg-gray-600" data-city="Bangalore">Bangalore</button>
+                    <button class="city-btn px-4 py-2 rounded-md bg-gray-500 text-white hover:bg-gray-600" data-city="Kolkata">Kolkata</button>
+                    <button class="city-btn px-4 py-2 rounded-md bg-gray-500 text-white hover:bg-gray-600" data-city="Hyderabad">Hyderabad</button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Temperature Preference</h2>
+                <div class="flex items-center space-x-4">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="radio" name="temp-unit" value="C" class="form-radio h-5 w-5 text-blue-500" checked>
+                        <span class="ml-2 text-gray-700">Celsius</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="radio" name="temp-unit" value="F" class="form-radio h-5 w-5 text-blue-500">
+                        <span class="ml-2 text-gray-700">Fahrenheit</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Weather -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Current Weather</h2>
+                <div id="currentWeather" class="space-y-4">
+                    <div class="animate-pulse bg-gray-200 h-32 rounded-md"></div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Daily Summary</h2>
+                <div id="dailySummary" class="space-y-4">
+                    <div class="animate-pulse bg-gray-200 h-32 rounded-md"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Configuration -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Alert Configuration</h2>
+                <form id="alertConfigForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Max Temperature Threshold</label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <input type="number" id="maxTempThreshold" 
+                                   class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                   placeholder="35">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                <span class="text-gray-500 sm:text-sm" id="tempUnit">°C</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Consecutive Alerts</label>
+                        <input type="number" id="consecutiveAlerts"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                               placeholder="2">
+                    </div>
+                    <button type="submit" 
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Update Alert Config
+                    </button>
+                </form>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Temperature Trend</h2>
+                <div id="visualization">
+                    <canvas id="tempChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentCity = 'Delhi';
+        let tempChart = null;
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch user's temperature preference
+            fetch('/api/user-preference')
+                .then(response => response.json())
+                .then(data => {
+                    document.querySelector(`input[name="temp-unit"][value="${data.temperature_unit}"]`).checked = true;
+                    updateAllData();
+                });
+
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Start periodic updates
+            setInterval(updateAllData, 300000); // Update every 5 minutes
+        });
+
+        function setupEventListeners() {
+            // City selection
+            document.querySelectorAll('.city-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.city-btn').forEach(btn => {
+                        btn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                        btn.classList.add('bg-gray-500', 'hover:bg-gray-600');
+                    });
+                    this.classList.remove('bg-gray-500', 'hover:bg-gray-600');
+                    this.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                    currentCity = this.dataset.city;
+                    updateAllData();
+                });
+            });
+
+            // Temperature unit preference
+            document.querySelectorAll('input[name="temp-unit"]').forEach(input => {
+                input.addEventListener('change', function() {
+                    fetch('/api/user-preference', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            temperature_unit: this.value
+                        })
+                    })
+                    .then(() => {
+                        document.getElementById('tempUnit').textContent = `°${this.value}`;
+                        updateAllData();
+                    });
+                });
+            });
+
+            // Alert configuration form
+            document.getElementById('alertConfigForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateAlertConfig();
+            });
+        }
+
+        function updateAllData() {
+            updateCurrentWeather();
+            updateDailySummary();
+            updateVisualization();
+        }
+
+        function updateCurrentWeather() {
+            fetch(`/api/current-weather?city=${currentCity}`)
+                .then(response => response.json())
+                .then(data => {
+                    const unit = document.querySelector('input[name="temp-unit"]:checked').value;
+                    const html = `
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-2xl font-bold">${currentCity}</h3>
+                                <p class="text-gray-600">${new Date(data.timestamp).toLocaleString()}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-4xl font-bold">${data.temperature.toFixed(1)}°${unit}</p>
+                                <p class="text-gray-600">Feels like: ${data.feels_like.toFixed(1)}°${unit}</p>
+                                <p class="text-lg">${data.condition}</p>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('currentWeather').innerHTML = html;
+                });
+        }
+
+        function updateDailySummary() {
+            fetch(`/api/daily-summary?city=${currentCity}`)
+                .then(response => response.json())
+                .then(data => {
+                    const unit = document.querySelector('input[name="temp-unit"]:checked').value;
+                    const html = data.map(day => `
+                        <div class="border-b pb-2">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="font-semibold">${new Date(day.date).toLocaleDateString()}</p>
+                                    <p class="text-sm text-gray-600">${day.dominant_condition}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p>High: ${day.max_temp.toFixed(1)}°${unit}</p>
+                                    <p>Low: ${day.min_temp.toFixed(1)}°${unit}</p>
+                                    <p>Avg: ${day.avg_temp.toFixed(1)}°${unit}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    document.getElementById('dailySummary').innerHTML = html;
+                });
+        }
+
+        function updateVisualization() {
+            fetch(`/api/visualization?city=${currentCity}`)
+                .then(response => response.json())
+                .then(data => {
+                    const chartData = JSON.parse(data);
+                    const unit = document.querySelector('input[name="temp-unit"]:checked').value;
+                    
+                    if (tempChart) {
+                        tempChart.destroy();
+                    }
+
+                    const ctx = document.getElementById('tempChart').getContext('2d');
+                    tempChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: chartData.data[0].x,
+                            datasets: [{
+                                label: `Temperature (°${unit})`,
+                                data: chartData.data[0].y,
+                                borderColor: 'rgb(59, 130, 246)',
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: `Temperature Trend - ${currentCity}`
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: false
+                                }
+                            }
+                        }
+                    });
+                });
+        }
+
+        function updateAlertConfig() {
+            const data = {
+                city: currentCity,
+                max_temp_threshold: parseFloat(document.getElementById('maxTempThreshold').value),
+                consecutive_alerts: parseInt(document.getElementById('consecutiveAlerts').value)
+            };
+
+            fetch('/api/update-alert-config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Alert configuration updated successfully!');
+                } else {
+                    alert('Error updating alert configuration');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
