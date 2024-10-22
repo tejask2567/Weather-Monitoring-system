@@ -89,12 +89,6 @@ Contributions to the Weather Monitoring System are welcome! Please follow these 
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
-## Contact
-
-Your Name - your.email@example.com
-
-Project Link: [https://github.com/yourusername/weather-monitoring-system](https://github.com/yourusername/weather-monitoring-system)
-
 ## Acknowledgements
 
 - [OpenWeatherMap API](https://openweathermap.org/api)
